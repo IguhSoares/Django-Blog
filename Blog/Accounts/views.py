@@ -1,6 +1,6 @@
 from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from .forms import  UserRegisterForm, UserForm, ProfileForm
+from .forms import UserRegisterForm, UserForm, ProfileForm
 from django.urls import reverse_lazy
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
@@ -21,12 +21,22 @@ def login_form(request):
             user = authenticate(username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect('home')
+                return redirect("home")
             else:
                 return render(
-                    request,"Accounts/login.html",{"login_form": login_form,"message": "Username or password incorrect"})
+                    request,
+                    "Accounts/login.html",
+                    {
+                        "login_form": login_form,
+                        "message": "Username or password incorrect",
+                    },
+                )
         else:
-            return render(request,"Accounts/login.html",{"login_form": login_form, "message": "Username or password incorrect"})
+            return render(
+                request,
+                "Accounts/login.html",
+                {"login_form": login_form, "message": "Username or password incorrect"},
+            )
     else:
         login_form = AuthenticationForm()
         return render(request, "Accounts/login.html", {"login_form": login_form})
@@ -53,7 +63,7 @@ def createprofile(request, user_id):
     create_profile = Profile.objects.get(id=user_id)
     if request.method == "POST":
         form = ProfileForm(request.POST, instance=request.user)
-        user_form = UserForm(request.POST,instance=request.user.profile)
+        user_form = UserForm(request.POST, instance=request.user.profile)
         if form.is_valid() and user_form.is_valid():
             data = form.cleaned_data
             user_data = user_form.cleaned_data
@@ -68,13 +78,22 @@ def createprofile(request, user_id):
             create_profile.image = data["image"]
             create_profile.save()
         else:
-            return render(request,"Accounts/createprofile.html",{"user_id": user_id, "form": form, "user_form": user_form})
+            return render(
+                request,
+                "Accounts/createprofile.html",
+                {"user_id": user_id, "form": form, "user_form": user_form},
+            )
 
         return redirect(f"/accounts/profile/{create_profile.user.id}")
     else:
         user_form = UserForm()
         form = ProfileForm()
-        return render(request,"Accounts/createprofile.html",{"user_id": user_id, "form": form, "user_form": user_form})
+        return render(
+            request,
+            "Accounts/createprofile.html",
+            {"user_id": user_id, "form": form, "user_form": user_form},
+        )
+
 
 @login_required
 def profile(request, user_id):
@@ -101,7 +120,14 @@ def editprofile(request, profile_id):
 
             edit_profile.description = data["description"]
             edit_profile.link = data["link"]
-            edit_profile.image = data["image"]
+
+            if data["image"] == False:
+                # if 'clear-image' box was checked by the user:
+                edit_profile.image = "avatar/default.png"
+            elif "image" in form.changed_data:
+                # updates the image only if the user has chosen a new image
+                edit_profile.image = data["image"]
+
             edit_profile.save()
         else:
             return render(
@@ -131,7 +157,9 @@ def editprofile(request, profile_id):
             "Accounts/editprofile.html",
             {"profile_id": profile_id, "form": form, "user_form": user_form},
         )
+
+
 def delete_account(resquest, user_id):
     delete_account = User.objects.filter(id=user_id)
     delete_account.delete()
-    return redirect('/')
+    return redirect("/")
